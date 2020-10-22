@@ -11,6 +11,6 @@ before_build:
     - cmd: git submodule update
     - cmd: cmake -H. -B./build
 build:
-    verbosity: normal
+    verbosity: detailed
 
 #call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"

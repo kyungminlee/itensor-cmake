@@ -29,6 +29,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-ITensor depends on [ITensor](https://itensor.org), distributed under [Apache License 2.0](https://raw.githubusercontent.com/ITensor/ITensors.jl/master/LICENSE).
+itensor-cmake depends on [ITensor](https://itensor.org), distributed under [Apache License 2.0](https://raw.githubusercontent.com/ITensor/ITensors.jl/master/LICENSE).
 
 Binary distribution of itensor-cmake for Windows also includes [OpenBLAS](https://www.openblas.net), distributed under [BSD-3 License](https://raw.githubusercontent.com/xianyi/OpenBLAS/master/LICENSE).

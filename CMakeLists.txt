@@ -87,7 +87,9 @@ install(
 )
 
 # === Install header files ===
-set(SUBDIRS "." "detail" "itdata" "mps" "mps/lattice" "mps/sites" "tensor" "util" "util/h5" "util/h5/std_addons" "util/h5/stl")
+set(SUBDIRS
+    "." "detail" "itdata" "mps" "mps/lattice" "mps/sites"
+    "tensor" "util" "util/h5" "util/h5/std_addons" "util/h5/stl")
 foreach(subdir ${SUBDIRS})
     file(GLOB headerFiles
         RELATIVE "${PROJECT_SOURCE_DIR}/ITensor/itensor"

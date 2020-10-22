@@ -9,8 +9,16 @@ configuration:
 before_build:
     - cmd: git submodule init
     - cmd: git submodule update
-    - cmd: cmake -H. -B./build
+    - cmd: cmake -H. -B build -DCMAKE_INSTALL_PREFIX=%APPVEYOR_BUILD_FOLDER%\installdir
 build:
     verbosity: detailed
-
-#call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+    parallel: true
+build_script:
+    - cmd: cmake --build build --target INSTALL --config %CONFIGURATION% #-- /nologo /verbosity:minimal /maxcpucount
+after_build:
+    - cd %APPVEYOR_BUILD_FOLDER%
+    - set BUILD_ARCHIVE=%APPVEYOR_PROJECT_NAME%-%CONFIGURATION%.zip
+    - cmd: 7z a %BUILD_ARCHIVE% installdir
+    - appveyor PushArtifact %BUILD_ARCHIVE%
+artifacts:
+    - path: '*.zip'

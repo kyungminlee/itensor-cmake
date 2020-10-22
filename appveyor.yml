@@ -7,8 +7,7 @@ configuration:
   - Debug
   - Release
 before_build:
-  - cmd: git submodule init
-  - cmd: git submodule update
+  - cmd: git submodule update --init
   - cmd: cmake -H. -B build -DCMAKE_INSTALL_PREFIX=%APPVEYOR_BUILD_FOLDER%\installdir
 build:
   verbosity: detailed
@@ -19,7 +18,9 @@ for:
   - 
     matrix:
       only:
-        - configuration: Release
+        - branch: main
+          configuration: Release
+          APPVEYOR_REPO_TAG: true
     after_build:
       - cd %APPVEYOR_BUILD_FOLDER%
       - set BUILD_ARCHIVE=%APPVEYOR_PROJECT_NAME%-%CONFIGURATION%.zip
@@ -38,4 +39,5 @@ for:
         prerelease: false
         on:
           branch: main
+          configuration: Release
           APPVEYOR_REPO_TAG: true

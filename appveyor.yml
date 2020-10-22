@@ -1,0 +1,16 @@
+version: 1.0.{build}
+image:
+    - Visual Studio 2019
+platform:
+    - x64
+configuration:
+    - Debug
+    - Release
+before_build:
+    - cmd: git submodule init
+    - cmd: git submodule update
+    - cmd: cmake -H. -B./build
+build:
+    verbosity: normal
+
+#call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"

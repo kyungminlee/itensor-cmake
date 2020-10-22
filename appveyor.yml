@@ -1,24 +1,36 @@
 version: 1.0.{build}
 image:
-    - Visual Studio 2019
+  - Visual Studio 2019
 platform:
-    - x64
+  - x64
 configuration:
-    - Debug
-    - Release
+  - Debug
+  - Release
 before_build:
-    - cmd: git submodule init
-    - cmd: git submodule update
-    - cmd: cmake -H. -B build -DCMAKE_INSTALL_PREFIX=%APPVEYOR_BUILD_FOLDER%\installdir
+  - cmd: git submodule init
+  - cmd: git submodule update
+  - cmd: cmake -H. -B build -DCMAKE_INSTALL_PREFIX=%APPVEYOR_BUILD_FOLDER%\installdir
 build:
-    verbosity: detailed
-    parallel: true
+  verbosity: detailed
+  parallel: true
 build_script:
-    - cmd: cmake --build build --target INSTALL --config %CONFIGURATION% #-- /nologo /verbosity:minimal /maxcpucount
+  - cmd: cmake --build build --target INSTALL --config %CONFIGURATION% #-- /nologo /verbosity:minimal /maxcpucount
 after_build:
-    - cd %APPVEYOR_BUILD_FOLDER%
-    - set BUILD_ARCHIVE=%APPVEYOR_PROJECT_NAME%-%CONFIGURATION%.zip
-    - cmd: 7z a %BUILD_ARCHIVE% installdir
-    - appveyor PushArtifact %BUILD_ARCHIVE%
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - set BUILD_ARCHIVE=%APPVEYOR_PROJECT_NAME%-%CONFIGURATION%.zip
+  - cmd: 7z a %BUILD_ARCHIVE% installdir
+  - appveyor PushArtifact %BUILD_ARCHIVE%
 artifacts:
-    - path: '*.zip'
+  - path: '*.zip'
+deploy:
+  # release: itensor-$(APPVEYOR_REPO_TAG_NAME)-x64
+  # description: 'Release of itensor $(APPVEYOR_REPO_TAG_NAME) tag created by AppVeyor build $(APPVEYOR_BUILD_VERSION)'
+  - provider: GitHub
+    artifact: /.*\.zip/
+    auth_token:
+      secure: nVwU/APPL08DuFnAmsPc5hwD9Bl90M4UgEfNi31cTb/jtJLALyZBa+JeO3hhP26O
+    draft: false
+    prerelease: false
+    on:
+      branch: main
+      # APPVEYOR_REPO_TAG: true

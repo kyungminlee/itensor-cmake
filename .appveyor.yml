@@ -12,8 +12,12 @@ before_build:
 build:
   verbosity: detailed
 build_script:
-  - cmd: cmake --build build --target INSTALL --config %CONFIGURATION%
+  - cmd: cmake --build build --config %CONFIGURATION%
+test_script:
+  - cmd: cmake --build build --target RUN_TESTS --config %CONFIGURATION% 
 after_build:
+  - cmd: cmake --build build --target INSTALL --config %CONFIGURATION%
+before_package:
   - cd %APPVEYOR_BUILD_FOLDER%
   - set BUILD_ARCHIVE=itensor-%CONFIGURATION%-MSVC-x64.zip
   - cmd: 7z a %BUILD_ARCHIVE% installdir

@@ -6,9 +6,10 @@ if(WIN32)
     if("${BLA_VENDOR}" STREQUAL "OpenBLAS")
         set(PLATFORM "openblas")
         if(NOT DEFINED OpenBLAS_ROOT)
-            message(STATUS "Using downloaded OpenBLAS for BLAS/LAPACK")
-            message(STATUS "libopenblas.dll will be copied to ${CMAKE_INSTALL_PREFIX}/bin.")
-            message(STATUS "Make sure to copy libopenblas.dll to the same directory as the executable, or to a directory in the PATH")
+            message(STATUS "\
+Using downloaded OpenBLAS for BLAS/LAPACK.
+libopenblas.dll will be copied to ${CMAKE_INSTALL_PREFIX}/bin.
+Make sure to copy libopenblas.dll to the same directory as the executable, or to a directory in the PATH")
             include(ExternalProject)
             ExternalProject_Add(
                 OpenBLAS

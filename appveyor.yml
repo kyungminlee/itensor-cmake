@@ -11,32 +11,25 @@ before_build:
   - cmd: cmake -H. -B build -DCMAKE_INSTALL_PREFIX=%APPVEYOR_BUILD_FOLDER%\installdir
 build:
   verbosity: detailed
-  parallel: true
 build_script:
   - cmd: cmake --build build --target INSTALL --config %CONFIGURATION%
-for:
-  - 
-    matrix:
-      only:
-        - branch: main
-          configuration: Release
-    after_build:
-      - cd %APPVEYOR_BUILD_FOLDER%
-      - set BUILD_ARCHIVE=%APPVEYOR_PROJECT_NAME%-%CONFIGURATION%.zip
-      - cmd: 7z a %BUILD_ARCHIVE% installdir
-      - appveyor PushArtifact %BUILD_ARCHIVE%
-    artifacts:
-      - path: '*.zip'
-    deploy:
-      - provider: GitHub
-        release: itensor-$(APPVEYOR_REPO_TAG_NAME)-x64
-        description: 'Release of itensor $(APPVEYOR_REPO_TAG_NAME) tag created by AppVeyor build $(APPVEYOR_BUILD_VERSION)'
-        artifact: /.*\.zip/
-        auth_token:
-          secure: nVwU/APPL08DuFnAmsPc5hwD9Bl90M4UgEfNi31cTb/jtJLALyZBa+JeO3hhP26O
-        draft: false
-        prerelease: false
-        on:
-          branch: main
-          configuration: Release
-          APPVEYOR_REPO_TAG: true
+after_build:
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - set BUILD_ARCHIVE=itensor-%CONFIGURATION%-MSVC-x64.zip
+  - cmd: 7z a %BUILD_ARCHIVE% installdir
+  - appveyor PushArtifact %BUILD_ARCHIVE%
+artifacts:
+  - path: '*.zip'
+deploy:
+  - provider: GitHub
+    release: $(APPVEYOR_REPO_TAG_NAME)
+    description: 'Release of itensor $(APPVEYOR_REPO_TAG_NAME) tag created by AppVeyor build $(APPVEYOR_BUILD_VERSION)'
+    artifact: /.*\.zip/
+    auth_token:
+      secure: nVwU/APPL08DuFnAmsPc5hwD9Bl90M4UgEfNi31cTb/jtJLALyZBa+JeO3hhP26O
+    draft: false
+    prerelease: false
+    on:
+      branch: main
+      configuration: Release
+      APPVEYOR_REPO_TAG: true

@@ -31,9 +31,9 @@ endif()
 include("LAPACK-config.cmake")
 
 # === Configuration ===
-include_directories("${CMAKE_BINARY_DIR}" "${CMAKE_INSTALL_PREFIX}/include")
+include_directories("${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_INSTALL_PREFIX}/include")
 
-set(ITENSOR_CONFIG_H "${CMAKE_BINARY_DIR}/itensor/config.h")
+set(ITENSOR_CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/itensor/config.h")
 file(WRITE  ${ITENSOR_CONFIG_H} "\
 #ifndef __ITENSOR_CONFIG_H
 #define __ITENSOR_CONFIG_H
@@ -49,7 +49,7 @@ ${LAPACK_HEADER}
 
 if(WIN32)
     # Workaround for unistd.h on Windows
-    set(ITENSOR_UNISTD_H "${CMAKE_BINARY_DIR}/unistd.h")
+    set(ITENSOR_UNISTD_H "${CMAKE_CURRENT_BINARY_DIR}/unistd.h")
     file(WRITE ${ITENSOR_UNISTD_H} "\
 #ifndef __ITENSOR_UNISTD_H
 #define __ITENSOR_UNISTD_H
@@ -114,3 +114,6 @@ if(WIN32)
         DESTINATION "include"
     )
 endif()
+
+enable_testing()
+add_subdirectory(tests)

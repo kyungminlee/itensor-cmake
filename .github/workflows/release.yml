@@ -6,66 +6,66 @@ on:
     tags:
       - 'v*'
 jobs:
-  build-ubuntu:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: true
+          prerelease: false
+  release:
     strategy:
       matrix:
-        BLA_VENDOR: ["OpenBLAS"]
-    runs-on: ubuntu-latest
+        include:
+          - os: ubuntu-latest
+            BLA_VENDOR: OpenBLAS
+            platform: ubuntu
+            asset_ext: tgz
+          - os: macos-latest
+            BLA_VENDOR: Apple
+            platform: macos
+            asset_ext: tgz
+          - os: windows-latest
+            BLA_VENDOR: OpenBLAS
+            platform: windows
+            asset_ext: zip
+    runs-on: ${{ matrix.os }}
+    needs: create_release
     steps:
     - uses: actions/checkout@v2
     - name: Check out submodule
       run: git submodule update --init
-    - name: Install dependencies
+    - name: Install OpenBLAS
+      if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.BLA_VENDOR == 'OpenBLAS' }}
       run: sudo apt-get install libopenblas-dev liblapacke-dev
     - name: Make CMake build directory
-      run: cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/itensor-${{ github.sha }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
+      run: cmake -B build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/itensor-${{ github.sha }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
     - name: Install Release
       run: cmake --build build --target install --config Release
-    - name: Package
+    - name: Package (tgz)
+      if: ${{ !startsWith(matrix.os, 'windows') }}
       run: |
-        export BUILD_ARCHIVE=itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
-        tar cvzf "$BUILD_ARCHIVE" -C /opt itensor-${{ github.sha }}
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
-        draft: false
-        prerelease: false
+        tar cvzf itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} -C ${{ github.workspace }} itensor-${{ github.sha }}
+    - name: Package (zip)
+      if: ${{ startsWith(matrix.os, 'windows') }}
+      run: |
+        7z a itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} ${{ github.workspace }}\itensor-${{ github.sha }}
     - name: Upload Release Asset
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
-        asset_name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
-        asset_content_type: application/zip
-  build-macos:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Check out submodule
-      run: git submodule update --init
-    - name: Make CMake build directory
-      run: cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/itensor-${{ github.sha }} -DBLA_VENDOR=Apple
-    - name: Install Release
-      run: sudo cmake --build build --target install --config Release
-    - name: Package
-      run: |
-        export BUILD_ARCHIVE=itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
-        tar cvzf "$BUILD_ARCHIVE" -C /opt itensor-${{ github.sha }}
-    - name: Upload Release Asset
-      id: upload-release-asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
-        asset_name: itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
-        asset_content_type: application/zip
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        asset_name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        asset_content_type: application/${{ matrix.asset_ext }}

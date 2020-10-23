@@ -1,10 +1,5 @@
 name: Upload Release Asset
-on: push
-  # push:
-  #   branch:
-  #     - main
-  #   tags:
-  #     - 'v*'
+on: [push, pull_request]
 jobs:
   config:
     runs-on: ubuntu-latest
@@ -40,6 +35,10 @@ jobs:
     - name: Install OpenBLAS
       if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.BLA_VENDOR == 'OpenBLAS' }}
       run: sudo apt-get install libopenblas-dev liblapacke-dev
+    - name: Install LAPACK
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.BLA_VENDOR == 'Generic' }}
+      run: sudo apt-get install liblapack-dev liblapacke-dev
+  
     - name: Make CMake build directory
       run: cmake -B build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
 
@@ -72,6 +71,7 @@ jobs:
 
   create_release:
     name: Create Release
+    #on: { push: { branch: [main], tags: [v*]}}
     runs-on: ubuntu-latest
     needs: build
     outputs:
@@ -87,8 +87,10 @@ jobs:
         release_name: ${{ github.ref }}
         draft: true
         prerelease: false
-  
+
   release:
+    name: Upload zip Release
+    #on: { push: { branch: [main], tags: [v*]}}
     strategy:
       matrix:
         include:
@@ -113,6 +115,8 @@ jobs:
         asset_content_type: application/${{ matrix.asset_ext }}
 
   release-deb:
+    name: Upload deb Release
+    #on: { push: { branch: [main], tags: [v*]}}
     strategy:
       matrix:
         include:

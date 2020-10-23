@@ -1,0 +1,42 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build-ubuntu:
+    strategy:
+      matrix:
+        BLA_VENDOR: ["OpenBLAS", "Generic"]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Check out submodule
+      run: git submodule update --init
+    - name: Install dependencies
+      run: sudo apt-get install libopenblas-dev liblapack-dev liblapacke-dev
+    - name: Make CMake build directory
+      run: cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/itensor-${{ github.sha }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
+    - name: Build Debug
+      run: cmake --build build --config Debug
+    - name: Test Debug
+      run: cmake --build build --target test --config Debug
+    - name: Build Release
+      run: cmake --build build --config Release
+    - name: Test Release
+      run: cmake --build build --target test --config Release
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Check out submodule
+      run: git submodule update --init
+    - name: Make CMake build directory
+      run: cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/itensor-${{ github.sha }} -DBLA_VENDOR=Apple
+    - name: Build Debug
+      run: cmake --build build --config Debug
+    - name: Test Debug
+      run: cmake --build build --target test --config Debug
+    - name: Build Release
+      run: cmake --build build --config Release
+    - name: Test Release
+      run: cmake --build build --target test --config Release          
+
+      

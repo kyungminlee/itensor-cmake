@@ -27,9 +27,10 @@ jobs:
     strategy:
       matrix:
         include:
-        - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS, platform: ubuntu,  asset_ext: tgz }
-        - { os: macos-latest,   BLA_VENDOR: Apple,    platform: macos,   asset_ext: tgz }
-        - { os: windows-latest, BLA_VENDOR: OpenBLAS, platform: windows, asset_ext: zip }
+        - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS, platform: ubuntu,  asset_ext: tgz, test_target: test }
+        - { os: ubuntu-latest,  BLA_VENDOR: Generic,  platform: ubuntu,  asset_ext: tgz, test_target: test }
+        - { os: macos-latest,   BLA_VENDOR: Apple,    platform: macos,   asset_ext: tgz, test_target: test }
+        - { os: windows-latest, BLA_VENDOR: OpenBLAS, platform: windows, asset_ext: zip, test_target: RUN_TESTS }
     needs: config
     runs-on: ${{ matrix.os }}
     steps:
@@ -41,6 +42,17 @@ jobs:
       run: sudo apt-get install libopenblas-dev liblapacke-dev
     - name: Make CMake build directory
       run: cmake -B build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
+
+    - name: Build Debug
+      run: cmake --build build --config Debug
+    - name: Test Debug
+      run: cmake --build build --target ${{ matrix.test_target }} --config Debug
+
+    - name: Build Release
+      run: cmake --build build --config Release
+    - name: Test Release
+      run: cmake --build build --target ${{ matrix.test_target }} --config Release
+
     - name: Install Release
       run: cmake --build build --target install --config Release
     - name: Package (tgz)

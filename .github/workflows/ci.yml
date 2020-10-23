@@ -7,7 +7,7 @@ jobs:
         BLA_VENDOR: ["OpenBLAS", "Generic"]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Check out submodule
       run: git submodule update --init
     - name: Install dependencies
@@ -28,17 +28,15 @@ jobs:
       run: |
         export BUILD_ARCHIVE=itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
         tar cvzf "$BUILD_ARCHIVE" -C /opt itensor-${{ github.sha }}
-    - name: Upload the artifacts
-      uses: skx/github-action-publish-binaries@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/upload-artifact@v2
       with:
-        args: 'itensor-*.tgz'
+        name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
+        path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
   
   build-macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Check out submodule
       run: git submodule update --init
     - name: Make CMake build directory
@@ -57,13 +55,10 @@ jobs:
       run: |
         export BUILD_ARCHIVE=itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
         tar cvzf "$BUILD_ARCHIVE" -C /opt itensor-${{ github.sha }}
-    - name: Upload the artifacts
-      uses: skx/github-action-publish-binaries@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/upload-artifact@v2
       with:
-        args: 'itensor-*.tgz'
-    
-        
+        name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
+        path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
+          
 
       

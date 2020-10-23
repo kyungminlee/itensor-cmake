@@ -1,11 +1,29 @@
 name: Upload Release Asset
-on: ["push"]
+on: push
   # push:
   #   branch:
   #     - main
   #   tags:
   #     - 'v*'
 jobs:
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract-version.outputs.result }}
+    steps:
+    - name: Extract version
+      uses: actions/github-script@v3
+      id: extract-version
+      with:
+        script: |
+          if (context.ref.startsWith("\/refs\/tags")) {
+            return context.ref.replace(/\/refs\/tags\//, '');
+          } else {
+            //return context.sha;
+            return context.sha.substring(0, 6);
+          }
+        result-encoding: string
+  
   build:
     strategy:
       matrix:
@@ -13,6 +31,7 @@ jobs:
         - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS, platform: ubuntu,  asset_ext: tgz }
         - { os: macos-latest,   BLA_VENDOR: Apple,    platform: macos,   asset_ext: tgz }
         - { os: windows-latest, BLA_VENDOR: OpenBLAS, platform: windows, asset_ext: zip }
+    needs: config
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -22,22 +41,22 @@ jobs:
       if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.BLA_VENDOR == 'OpenBLAS' }}
       run: sudo apt-get install libopenblas-dev liblapacke-dev
     - name: Make CMake build directory
-      run: cmake -B build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/itensor-${{ github.sha }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
+      run: cmake -B build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
     - name: Install Release
       run: cmake --build build --target install --config Release
     - name: Package (tgz)
       if: ${{ !startsWith(matrix.os, 'windows') }}
       run: |
-        tar cvzf itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} -C ${{ github.workspace }} itensor-${{ github.sha }}
+        tar cvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} -C ${{ github.workspace }} itensor-${{ needs.config.outputs.tag }}
     - name: Package (zip)
       if: ${{ startsWith(matrix.os, 'windows') }}
       run: |
-        7z a itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} ${{ github.workspace }}\itensor-${{ github.sha }}
+        7z a itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} ${{ github.workspace }}\itensor-${{ needs.config.outputs.tag }}
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
-        path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        path: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
         retention-days: 3
 
   create_release:
@@ -65,12 +84,12 @@ jobs:
         - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS, platform: ubuntu,  asset_ext: tgz }
         - { os: macos-latest,   BLA_VENDOR: Apple,    platform: macos,   asset_ext: tgz }
         - { os: windows-latest, BLA_VENDOR: OpenBLAS, platform: windows, asset_ext: zip }
-    needs: [create_release, build]
+    needs: [config, create_release, build]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
     - name: Upload Release Asset
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1
@@ -78,8 +97,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
       with:
         upload_url: ${{ needs.create_release.outputs.upload_url }}
-        asset_path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
-        asset_name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        asset_path: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        asset_name: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
         asset_content_type: application/${{ matrix.asset_ext }}
 
   release-deb:
@@ -89,16 +108,16 @@ jobs:
           - os: ubuntu-latest
             BLA_VENDOR: OpenBLAS
             platform: ubuntu
-    needs: [create_release, build]
+    needs: [config, create_release, build]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.tgz
+        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.tgz
     - name: List
       run: |
-        tar xvzf itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.tgz -C ${{ github.workspace }}
-        mv ${{ github.workspace }}/itensor-${{ github.sha }} ${{ github.workspace }}/installdir
+        tar xvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.tgz -C ${{ github.workspace }}
+        mv ${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} ${{ github.workspace }}/installdir
     - name: Create DEB configuration
       run: |
         mkdir -p ${{ github.workspace }}/installdir/DEBIAN
@@ -114,11 +133,11 @@ jobs:
         Description: ITensor package
         EOS
     - name: Package (deb)
-      run: dpkg-deb --build ${{ github.workspace }}/installdir itensor-dev_${{ github.sha }}_amd64.deb
+      run: dpkg-deb --build ${{ github.workspace }}/installdir itensor-dev_${{ needs.config.outputs.tag }}_amd64.deb
     - uses: actions/upload-artifact@v2
       with:
-        name: itensor-dev_${{ github.sha }}_amd64.deb
-        path: itensor-dev_${{ github.sha }}_amd64.deb
+        name: itensor-dev_${{ needs.config.outputs.version }}_amd64.deb
+        path: itensor-dev_${{ needs.config.outputs.version }}_amd64.deb
     - name: Upload Release Asset
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1
@@ -126,6 +145,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
       with:
         upload_url: ${{ needs.create_release.outputs.upload_url }}
-        asset_path: itensor-dev_${{ github.sha }}_amd64.deb
-        asset_name: itensor-dev_${{ github.sha }}_amd64.deb
+        asset_path: itensor-dev_${{ needs.config.outputs.version }}_amd64.deb
+        asset_name: itensor-dev_${{ needs.config.outputs.version }}_amd64.deb
         asset_content_type: application/vnd.debian.binary-package

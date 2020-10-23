@@ -31,6 +31,7 @@ jobs:
         ls -al
         pwd
         apt-cache search mkl
+        tar tvzf "$BUILD_ARCHIVE"
 
   build-macos:
     runs-on: macos-latest
@@ -49,7 +50,7 @@ jobs:
     - name: Test Release
       run: cmake --build build --target test --config Release
     - name: Install Release
-      run: cmake --build build --target install --config Release
+      run: sudo cmake --build build --target install --config Release
     - name: Package
       run: |
         export BUILD_ARCHIVE=itensor-Accelerate-macos-x86_64.tgz

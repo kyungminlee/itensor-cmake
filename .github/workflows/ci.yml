@@ -13,7 +13,7 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get install libopenblas-dev liblapack-dev liblapacke-dev
     - name: Make CMake build directory
-      run: cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/itensor -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
+      run: cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/itensor-${{ github.sha }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
     - name: Build Debug
       run: cmake --build build --config Debug
     - name: Test Debug
@@ -26,8 +26,9 @@ jobs:
       run: cmake --build build --target install --config Release
     - name: Package
       run: |
-        export BUILD_ARCHIVE=itensor-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
-        tar cvzf "$BUILD_ARCHIVE" /opt/itensor
+        export BUILD_ARCHIVE=itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
+        cd /opt
+        tar cvzf "$BUILD_ARCHIVE" itensor-${{ github.sha }}
         ls -al
         pwd
         apt-cache search mkl
@@ -40,7 +41,7 @@ jobs:
     - name: Check out submodule
       run: git submodule update --init
     - name: Make CMake build directory
-      run: cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/itensor -DBLA_VENDOR=Apple
+      run: cmake -B build -DCMAKE_INSTALL_PREFIX=/opt/itensor-${{ github.sha }} -DBLA_VENDOR=Apple
     - name: Build Debug
       run: cmake --build build --config Debug
     - name: Test Debug
@@ -53,8 +54,9 @@ jobs:
       run: sudo cmake --build build --target install --config Release
     - name: Package
       run: |
-        export BUILD_ARCHIVE=itensor-Accelerate-macos-x86_64.tgz
-        tar cvzf "$BUILD_ARCHIVE" /opt/itensor
+        export BUILD_ARCHIVE=itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
+        cd /opt
+        tar cvzf "$BUILD_ARCHIVE" itensor-${{ github.sha }}
         ls -al
         pwd
 

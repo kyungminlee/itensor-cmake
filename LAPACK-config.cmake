@@ -97,13 +97,16 @@ else()
     endif()
 
     if(DEFINED ENV{LAPACK_INCLUDE_DIR})
+        message(STATUS "Adding include directory $ENV{LAPACK_INCLUDE_DIR} for BLAS/LAPACK")
+
         include_directories("$ENV{LAPACK_INCLUDE_DIR}/include")
     endif()
 
     if(NOT DEFINED LAPACK_LIBRARIES)
         find_package(LAPACK REQUIRED)
+        if("${BLA_VENDOR}" STREQUAL "OpenBLAS")
+            list(APPEND LAPACK_LIBRARIES "pthread")
+        endif()
     endif()
-
-    list(APPEND LAPACK_LIBRARIES "pthread")
 endif()
 

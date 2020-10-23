@@ -1,10 +1,10 @@
 name: Upload Release Asset
-on:
-  push:
-    branch:
-      - main
-    tags:
-      - 'v*'
+on: ["push"]
+  # push:
+  #   branch:
+  #     - main
+  #   tags:
+  #     - 'v*'
 jobs:
   create_release:
     name: Create Release
@@ -59,13 +59,66 @@ jobs:
       if: ${{ startsWith(matrix.os, 'windows') }}
       run: |
         7z a itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} ${{ github.workspace }}\itensor-${{ github.sha }}
-    - name: Upload Release Asset
-      id: upload-release-asset 
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
       with:
-        upload_url: ${{ needs.create_release.outputs.upload_url }}
-        asset_path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
-        asset_name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
-        asset_content_type: application/${{ matrix.asset_ext }}
+        name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        retention-days: 3
+    # - name: Upload Release Asset
+    #   id: upload-release-asset 
+    #   uses: actions/upload-release-asset@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+    #   with:
+    #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+    #     asset_path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+    #     asset_name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+    #     asset_content_type: application/${{ matrix.asset_ext }}
+  release-deb:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            BLA_VENDOR: OpenBLAS
+            platform: ubuntu
+    needs: release
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.tgz
+    - name: List
+      run: ls -al
+    # - name: Install Release
+    #   run: cmake --build build --target install --config Release
+    # - name: Create DEB configuration
+    #   run: |
+    #     mkdir -p ${{ github.workspace }}/installdir/DEBIAN/
+    #     cat > ${{ github.workspace }}/installdir/DEBIAN/control <<EOS
+    #     Package: itensor-dev
+    #     Version: 3.1.5
+    #     Section: science
+    #     Priority: optional
+    #     Architecture: amd64
+    #     Essential: no
+    #     Depends: liblapacke-dev, libopenblas-dev
+    #     Maintainer: Kyungmin Lee <kyungmin.lee.42@gmail.com>
+    #     Description: ITensor package
+    #     EOS
+    # - name: Package (deb)
+    #   run: dpkg-deb --build ${{ github.workspace }}/installdir itensor-dev_${{ github.sha }}_amd64.deb
+    # - uses: actions/upload-artifact@v2
+    #   with:
+    #     name: itensor-dev_${{ github.sha }}_amd64.deb
+    #     path: itensor-dev_${{ github.sha }}_amd64.deb
+    # - name: Upload Release Asset
+    #   id: upload-release-asset 
+    #   uses: actions/upload-release-asset@v1
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+    #   with:
+    #     upload_url: ${{ needs.create_release.outputs.upload_url }}
+    #     asset_path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+    #     asset_name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+    #     asset_content_type: application/${{ matrix.asset_ext }}

@@ -11,7 +11,7 @@ jobs:
       id: extract-version
       with:
         script: |
-          if (context.ref.startsWith("\/refs\/tags")) {
+          if (context.ref.startsWith("/refs/tags")) {
             return context.ref.replace(/\/refs\/tags\//, '');
           } else {
             return context.sha.substring(0, 6);

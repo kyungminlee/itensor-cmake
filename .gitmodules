@@ -1,6 +1,3 @@
 [submodule "ITensor"]
 	path = ITensor
 	url = https://github.com/ITensor/ITensor.git
-[submodule "OpenBLAS"]
-	path = OpenBLAS
-	url = https://github.com/xianyi/OpenBLAS.git

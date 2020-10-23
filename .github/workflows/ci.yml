@@ -22,17 +22,6 @@ jobs:
       run: cmake --build build --config Release
     - name: Test Release
       run: cmake --build build --target test --config Release
-    - name: Install Release
-      run: cmake --build build --target install --config Release
-    - name: Package
-      run: |
-        export BUILD_ARCHIVE=itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
-        tar cvzf "$BUILD_ARCHIVE" -C /opt itensor-${{ github.sha }}
-    - uses: actions/upload-artifact@v2
-      with:
-        name: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
-        path: itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
-  
   build-macos:
     runs-on: macos-latest
     steps:
@@ -48,17 +37,6 @@ jobs:
     - name: Build Release
       run: cmake --build build --config Release
     - name: Test Release
-      run: cmake --build build --target test --config Release
-    - name: Install Release
-      run: sudo cmake --build build --target install --config Release
-    - name: Package
-      run: |
-        export BUILD_ARCHIVE=itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
-        tar cvzf "$BUILD_ARCHIVE" -C /opt itensor-${{ github.sha }}
-    - uses: actions/upload-artifact@v2
-      with:
-        name: itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
-        path: itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
-          
+      run: cmake --build build --target test --config Release          
 
       

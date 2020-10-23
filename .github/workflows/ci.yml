@@ -27,13 +27,14 @@ jobs:
     - name: Package
       run: |
         export BUILD_ARCHIVE=itensor-${{ github.sha }}-${{ matrix.BLA_VENDOR }}-ubuntu-x86_64.tgz
-        cd /opt
-        tar cvzf "$BUILD_ARCHIVE" itensor-${{ github.sha }}
-        ls -al
-        pwd
-        apt-cache search mkl
-        tar tvzf "$BUILD_ARCHIVE"
-
+        tar cvzf "$BUILD_ARCHIVE" -C /opt itensor-${{ github.sha }}
+    - name: Upload the artifacts
+      uses: skx/github-action-publish-binaries@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: 'itensor-*.tgz'
+  
   build-macos:
     runs-on: macos-latest
     steps:
@@ -55,12 +56,13 @@ jobs:
     - name: Package
       run: |
         export BUILD_ARCHIVE=itensor-${{ github.sha }}-Accelerate-macos-x86_64.tgz
-        cd /opt
-        tar cvzf "$BUILD_ARCHIVE" itensor-${{ github.sha }}
-        ls -al
-        pwd
-
-
+        tar cvzf "$BUILD_ARCHIVE" -C /opt itensor-${{ github.sha }}
+    - name: Upload the artifacts
+      uses: skx/github-action-publish-binaries@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        args: 'itensor-*.tgz'
     
         
 

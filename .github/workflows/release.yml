@@ -1,5 +1,5 @@
 name: Upload Release Asset
-on: [push, pull_request]
+on: push
 jobs:
   config:
     runs-on: ubuntu-latest
@@ -71,9 +71,8 @@ jobs:
 
   create_release:
     name: Create Release
-    #on: { push: { branch: [main], tags: [v*]}}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [config, build]
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -84,17 +83,17 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
+        release_name: ${{ needs.config.outputs.version }}
         draft: true
         prerelease: false
 
   release:
     name: Upload zip Release
-    #on: { push: { branch: [main], tags: [v*]}}
     strategy:
       matrix:
         include:
         - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS, platform: ubuntu,  asset_ext: tgz }
+        - { os: ubuntu-latest,  BLA_VENDOR: Generic,  platform: ubuntu,  asset_ext: tgz }
         - { os: macos-latest,   BLA_VENDOR: Apple,    platform: macos,   asset_ext: tgz }
         - { os: windows-latest, BLA_VENDOR: OpenBLAS, platform: windows, asset_ext: zip }
     needs: [config, create_release, build]
@@ -116,7 +115,6 @@ jobs:
 
   release-deb:
     name: Upload deb Release
-    #on: { push: { branch: [main], tags: [v*]}}
     strategy:
       matrix:
         include:

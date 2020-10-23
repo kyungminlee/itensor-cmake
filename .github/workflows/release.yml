@@ -19,7 +19,6 @@ jobs:
           if (context.ref.startsWith("\/refs\/tags")) {
             return context.ref.replace(/\/refs\/tags\//, '');
           } else {
-            //return context.sha;
             return context.sha.substring(0, 6);
           }
         result-encoding: string
@@ -47,11 +46,11 @@ jobs:
     - name: Package (tgz)
       if: ${{ !startsWith(matrix.os, 'windows') }}
       run: |
-        tar cvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} -C ${{ github.workspace }} itensor-${{ needs.config.outputs.tag }}
+        tar cvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} -C ${{ github.workspace }} itensor-${{ needs.config.outputs.version }}
     - name: Package (zip)
       if: ${{ startsWith(matrix.os, 'windows') }}
       run: |
-        7z a itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} ${{ github.workspace }}\itensor-${{ needs.config.outputs.tag }}
+        7z a itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} ${{ github.workspace }}\itensor-${{ needs.config.outputs.version }}
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
@@ -133,7 +132,7 @@ jobs:
         Description: ITensor package
         EOS
     - name: Package (deb)
-      run: dpkg-deb --build ${{ github.workspace }}/installdir itensor-dev_${{ needs.config.outputs.tag }}_amd64.deb
+      run: dpkg-deb --build ${{ github.workspace }}/installdir itensor-dev_${{ needs.config.outputs.version }}_amd64.deb
     - uses: actions/upload-artifact@v2
       with:
         name: itensor-dev_${{ needs.config.outputs.version }}_amd64.deb

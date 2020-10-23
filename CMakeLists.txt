@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.10)
+cmake_minimum_required (VERSION 3.14)
 
 if (POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
@@ -24,8 +24,6 @@ if(MSVC)
         add_compile_options(/wd4267 /wd4996 /wd4244 /wd4101 /wd4834)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SILENCE_ALL_CXX17_DEPRECATION_WARN)
     endif()
-else()
-    # add_compile_options(-std=c++17)
 endif()
 
 include("LAPACK-config.cmake")
@@ -77,14 +75,36 @@ list(TRANSFORM SOURCES PREPEND "${PROJECT_SOURCE_DIR}/ITensor/itensor/")
 
 include_directories("${PROJECT_SOURCE_DIR}/ITensor")
 
-add_library(itensor STATIC ${SOURCES})
+add_library(itensor-obj OBJECT ${SOURCES})
+set_property(TARGET itensor-obj PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+add_library(itensor-static STATIC $<TARGET_OBJECTS:itensor-obj>)
+set_target_properties(itensor-static PROPERTIES OUTPUT_NAME itensor)
+
+if(WIN32)
+else()
+    add_library(itensor-shared SHARED $<TARGET_OBJECTS:itensor-obj>)
+    target_link_libraries(itensor-shared ${LAPACK_LIBRARIES})
+    set_target_properties(itensor-shared PROPERTIES OUTPUT_NAME itensor)
+endif()
 
 # === Install library file ===
-install(
-    TARGETS
-    itensor
-    ARCHIVE DESTINATION lib
-)
+if(WIN32)
+    install(
+        TARGETS
+            itensor-static
+        ARCHIVE DESTINATION
+            lib
+    )
+else()
+    install(
+        TARGETS
+            itensor-static
+            itensor-shared
+        ARCHIVE DESTINATION
+            lib
+    )
+endif()
 
 # === Install header files ===
 set(SUBDIRS

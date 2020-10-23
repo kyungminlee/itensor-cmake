@@ -1,13 +1,17 @@
 cmake_minimum_required (VERSION 3.14)
-
 if (POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif(POLICY CMP0048)
 
+set(ITENSOR_VERSION_MAJOR 3)
+set(ITENSOR_VERSION_MINOR 1)
+set(ITENSOR_VERSION_PATCH 5)
+set(ITENSOR_VERSION_STRING ${ITENSOR_VERSION_MAJOR}.${ITENSOR_VERSION_MINOR}.${ITENSOR_VERSION_PATCH})
+
 project(ITensor
     LANGUAGES CXX
     HOMEPAGE_URL "https://itensor.org"
-    VERSION "3.1.5"
+    VERSION ${ITENSOR_VERSION_STRING}
     )
 
 # === Options ===
@@ -102,6 +106,12 @@ if(BUILD_STATIC)
     add_library(itensor-static STATIC $<TARGET_OBJECTS:itensor-obj>)
     set_target_properties(itensor-static PROPERTIES OUTPUT_NAME itensor)
     list(APPEND INSTALL_TARGETS itensor-static)
+    set_target_properties(
+        itensor-static
+        PROPERTIES
+            VERSION ${ITENSOR_VERSION_STRING}
+            SOVERSION ${ITENSOR_VERSION_MAJOR}
+    )
 endif()
 
 if(BUILD_SHARED)
@@ -109,6 +119,12 @@ if(BUILD_SHARED)
     target_link_libraries(itensor-shared ${LAPACK_LIBRARIES})
     set_target_properties(itensor-shared PROPERTIES OUTPUT_NAME itensor)
     list(APPEND INSTALL_TARGETS itensor-shared)
+    set_target_properties(
+        itensor-shared
+        PROPERTIES
+            VERSION ${ITENSOR_VERSION_STRING}
+            SOVERSION ${ITENSOR_VERSION_MAJOR}
+    )
 endif()
 
 # === Install library file ===

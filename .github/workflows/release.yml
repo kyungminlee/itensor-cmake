@@ -1,4 +1,4 @@
-name: Build Test Release
+name: build-test-deploy
 on: [push, pull_request]
 jobs:
   config:

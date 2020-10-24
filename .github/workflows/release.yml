@@ -22,10 +22,11 @@ jobs:
     strategy:
       matrix:
         include:
-        - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS, platform: ubuntu,  asset_ext: tgz, test_target: test }
-        - { os: ubuntu-latest,  BLA_VENDOR: Generic,  platform: ubuntu,  asset_ext: tgz, test_target: test }
-        - { os: macos-latest,   BLA_VENDOR: Apple,    platform: macos,   asset_ext: tgz, test_target: test }
-        - { os: windows-latest, BLA_VENDOR: OpenBLAS, platform: windows, asset_ext: zip, test_target: RUN_TESTS }
+        - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS,     lapack: openblas,   platform: ubuntu,  asset_ext: tgz, test_target: test }
+        - { os: ubuntu-latest,  BLA_VENDOR: Generic,      lapack: lapack,     platform: ubuntu,  asset_ext: tgz, test_target: test }
+        - { os: ubuntu-20.04,   BLA_VENDOR: Intel10_64lp, lapack: mkl,        platform: ubuntu,  asset_ext: tgz, test_target: test }
+        - { os: macos-latest,   BLA_VENDOR: Apple,        lapack: accelerate, platform: macos,   asset_ext: tgz, test_target: test }
+        - { os: windows-latest, BLA_VENDOR: OpenBLAS,     lapack: openblas,   platform: windows, asset_ext: zip, test_target: RUN_TESTS }
     needs: config
     runs-on: ${{ matrix.os }}
     steps:
@@ -34,13 +35,28 @@ jobs:
       run: git submodule update --init
     - name: Install OpenBLAS
       if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.BLA_VENDOR == 'OpenBLAS' }}
-      run: sudo apt-get install libopenblas-dev liblapacke-dev
+      run: |
+        sudo apt-get install libopenblas-dev liblapacke-dev
     - name: Install LAPACK
-      if: ${{ matrix.os == 'ubuntu-latest' && matrix.BLA_VENDOR == 'Generic' }}
-      run: sudo apt-get install liblapack-dev liblapacke-dev
+      if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.BLA_VENDOR == 'Generic' }}
+      run: |
+        sudo apt-get install liblapack-dev liblapacke-dev
+    - name: Install MKL
+      if: ${{ startsWith(matrix.os, 'ubuntu') && startsWith(matrix.BLA_VENDOR, 'Intel') }}
+      run: |
+        sudo add-apt-repository universe
+        sudo add-apt-repository multiverse
+        sudo apt-get update
+        sudo apt-get install libmkl-dev liblapacke-dev
   
     - name: Make CMake build directory
+      if: ${{ !( startsWith(matrix.os, 'ubuntu') && matrix.lapack == 'mkl' ) }}
       run: cmake -B build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
+    - name: Make CMake build directory
+      if: ${{ startsWith(matrix.os, 'ubuntu') && matrix.lapack == 'mkl' }}
+      run: cmake -B build -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} -DBLA_VENDOR=${{ matrix.BLA_VENDOR }}
+      env:
+        LAPACK_INCLUDE_DIR: /usr/include/mkl
 
     - name: Build Debug
       run: cmake --build build --config Debug
@@ -57,17 +73,17 @@ jobs:
     - name: Package (tgz)
       if: ${{ !startsWith(matrix.os, 'windows') }}
       run: |
-        tar cvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} -C ${{ github.workspace }} itensor-${{ needs.config.outputs.version }}
+        tar cvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} -C ${{ github.workspace }} itensor-${{ needs.config.outputs.version }}
     - name: Package (zip)
       if: ${{ startsWith(matrix.os, 'windows') }}
       run: |
-        7z a itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} ${{ github.workspace }}\itensor-${{ needs.config.outputs.version }}
+        7z a itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }} ${{ github.workspace }}\itensor-${{ needs.config.outputs.version }}
     - name: Upload Artifact
       if: ${{ github.event_name == 'push' }}
       uses: actions/upload-artifact@v2
       with:
-        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
-        path: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        path: itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
         retention-days: 3
 
   create_release:
@@ -95,16 +111,17 @@ jobs:
     strategy:
       matrix:
         include:
-        - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS, platform: ubuntu,  asset_ext: tgz }
-        - { os: ubuntu-latest,  BLA_VENDOR: Generic,  platform: ubuntu,  asset_ext: tgz }
-        - { os: macos-latest,   BLA_VENDOR: Apple,    platform: macos,   asset_ext: tgz }
-        - { os: windows-latest, BLA_VENDOR: OpenBLAS, platform: windows, asset_ext: zip }
+        - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS,     lapack: openblas,   platform: ubuntu,  asset_ext: tgz, test_target: test }
+        - { os: ubuntu-latest,  BLA_VENDOR: Generic,      lapack: lapack,     platform: ubuntu,  asset_ext: tgz, test_target: test }
+        - { os: ubuntu-20.04,   BLA_VENDOR: Intel10_64lp, lapack: mkl,        platform: ubuntu,  asset_ext: tgz, test_target: test }
+        - { os: macos-latest,   BLA_VENDOR: Apple,        lapack: accelerate, platform: macos,   asset_ext: tgz, test_target: test }
+        - { os: windows-latest, BLA_VENDOR: OpenBLAS,     lapack: openblas,   platform: windows, asset_ext: zip, test_target: RUN_TESTS }
     needs: [config, create_release, build]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
     - name: Upload Release Asset
       id: upload-release-asset 
       uses: actions/upload-release-asset@v1
@@ -112,8 +129,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
       with:
         upload_url: ${{ needs.create_release.outputs.upload_url }}
-        asset_path: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
-        asset_name: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        asset_path: itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
+        asset_name: itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.${{ matrix.asset_ext }}
         asset_content_type: application/${{ matrix.asset_ext }}
 
   release-deb:
@@ -122,39 +139,39 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            BLA_VENDOR: OpenBLAS
-            platform: ubuntu
+        - { os: ubuntu-latest,  BLA_VENDOR: OpenBLAS,     lapack: openblas,   platform: ubuntu,  asset_ext: tgz, test_target: test, lapack_dep: libopenblas-dev }
+        - { os: ubuntu-latest,  BLA_VENDOR: Generic,      lapack: lapack,     platform: ubuntu,  asset_ext: tgz, test_target: test, lapack_dep: liblapack-dev }
+        - { os: ubuntu-20.04,   BLA_VENDOR: Intel10_64lp, lapack: mkl,        platform: ubuntu,  asset_ext: tgz, test_target: test, lapack_dep: libmkl-dev }
     needs: [config, create_release, build]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.tgz
+        name: itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.tgz
     - name: List
       run: |
-        tar xvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.BLA_VENDOR }}-${{ matrix.platform }}-x86_64.tgz -C ${{ github.workspace }}
+        tar xvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.tgz -C ${{ github.workspace }}
         mv ${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} ${{ github.workspace }}/installdir
     - name: Create DEB configuration
       run: |
         mkdir -p ${{ github.workspace }}/installdir/DEBIAN
         cat > ${{ github.workspace }}/installdir/DEBIAN/control <<EOS
-        Package: libitensor-dev
+        Package: libitensor-${{ matrix.lapack }}-dev
         Version: 3.1.5
         Section: science
         Priority: optional
         Architecture: amd64
         Essential: no
-        Depends: liblapacke-dev, libopenblas-dev
+        Depends: ${{ matrix.lapack_dep }}, liblapacke-dev
         Maintainer: Kyungmin Lee <kyungmin.lee.42@gmail.com>
         Description: ITensor is a library for implementing tensor network calculations.
         EOS
     - name: Package (deb)
-      run: dpkg-deb --build ${{ github.workspace }}/installdir libitensor-dev_${{ needs.config.outputs.version }}_amd64.deb
+      run: dpkg-deb --build ${{ github.workspace }}/installdir libitensor-${{ matrix.lapack }}-dev_${{ needs.config.outputs.version }}_amd64.deb
     - uses: actions/upload-artifact@v2
       with:
-        name: libitensor-dev_${{ needs.config.outputs.version }}_amd64.deb
-        path: libitensor-dev_${{ needs.config.outputs.version }}_amd64.deb
+        name: libitensor-${{ matrix.lapack }}-dev_${{ needs.config.outputs.version }}_amd64.deb
+        path: libitensor-${{ matrix.lapack }}-dev_${{ needs.config.outputs.version }}_amd64.deb
     - name: Upload Release Asset
       id: upload-release-asset 
       if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
@@ -163,6 +180,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
       with:
         upload_url: ${{ needs.create_release.outputs.upload_url }}
-        asset_path: libitensor-dev_${{ needs.config.outputs.version }}_amd64.deb
-        asset_name: libitensor-dev_${{ needs.config.outputs.version }}_amd64.deb
+        asset_path: libitensor-${{ matrix.lapack }}-dev_${{ needs.config.outputs.version }}_amd64.deb
+        asset_name: libitensor-${{ matrix.lapack }}-dev_${{ needs.config.outputs.version }}_amd64.deb
         asset_content_type: application/vnd.debian.binary-package

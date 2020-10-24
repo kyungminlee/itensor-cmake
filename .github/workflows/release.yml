@@ -151,7 +151,8 @@ jobs:
     - name: List
       run: |
         tar xvzf itensor-${{ needs.config.outputs.version }}-${{ matrix.lapack }}-${{ matrix.platform }}-x86_64.tgz -C ${{ github.workspace }}
-        mv ${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} ${{ github.workspace }}/installdir
+        mkdir -p ${{ github.workspace }}/installdir
+        mv ${{ github.workspace }}/itensor-${{ needs.config.outputs.version }} ${{ github.workspace }}/installdir/usr
     - name: Create DEB configuration
       run: |
         mkdir -p ${{ github.workspace }}/installdir/DEBIAN
